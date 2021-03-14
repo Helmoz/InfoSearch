@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using System.Text.RegularExpressions;
 
 namespace InfoSearch.Lib
@@ -6,60 +7,44 @@ namespace InfoSearch.Lib
     public static class TextCleaner
     {
         private const string EmptySymbol = " ";
+        private static string LinksRegex { get; } = @"\bhttps?:\/\/(www\.)?[-a-zа-я0-9@:%._\+~#=]{2,256}\.[a-zа-я]{2,6}\b([-a-zа-я0-9@:%_\+.~#?&//=]*)\b";
+        private static string ScriptRegex { get; set; } = "<script.*?script>";
+        private static string CssRegex { get; set; } = "<style.*?style>";
+        private static string UnicodeSymbolsRegex { get; set; } = "&#.*?;";
+        private static string TagsRegex { get; set; } = @"<(.|\n)*?>";
+        private static string ExtraCarriageRegex { get; set; } = "[\r\n]+";
+        private static string SingleDigitsRegex { get; set; } = @"\b\d+\b";
+        private static string WhitespaceRegex { get; set; } = @"\s+";
 
         public static string Clean(this string source)
         {
-            return source
-                .RemoveLinks()
-                .RemoveScript()
-                .RemoveCss()
-                .RemoveUnicodeSymbols()
-                .RemoveTags()
-                .RemoveExtraCarriage()
-                .RemoveSingleDigits()
-                .RemoveWhitespace();
+            var removes = new List<Remove>()
+            {
+                new(LinksRegex),
+                new(ScriptRegex, RegexOptions.Singleline),
+                new(CssRegex, RegexOptions.Singleline),
+                new(UnicodeSymbolsRegex),
+                new(TagsRegex),
+                new(ExtraCarriageRegex, RegexOptions.None, "\r\n"),
+                new(SingleDigitsRegex),
+                new(WhitespaceRegex),
+            };
+
+            return removes
+                .Aggregate(source, (current, remove) => 
+                    Regex.Replace(current, remove.Regex, remove.ReplaceSymbol, remove.RegexOptions));
         }
 
-        private static string RemoveScript(this string source)
+        private record Remove
         {
-            return Regex.Replace(source, "<script.*?script>", EmptySymbol, RegexOptions.Singleline);
-        }
+            public string Regex { get; }
 
-        private static string RemoveCss(this string source)
-        {
-            return Regex.Replace(source, "<style.*?style>", EmptySymbol, RegexOptions.Singleline);
-        }
+            public string ReplaceSymbol { get; }
 
-        private static string RemoveUnicodeSymbols(this string source)
-        {
-            return Regex.Replace(source, "&#.*?;", EmptySymbol);
-        }
+            public RegexOptions RegexOptions { get; }
 
-        private static string RemoveTags(this string source)
-        {
-            return Regex.Replace(source, @"<(.|\n)*?>", EmptySymbol);
-        }
-
-        private static string RemoveExtraCarriage(this string source)
-        {
-            return Regex.Replace(source, "[\r\n]+", "\r\n");
-        }
-
-        private static string RemoveWhitespace(this string source)
-        {
-            return Regex.Replace(source, @"\s+", EmptySymbol);
-        }
-        
-        private static string UrlRegex { get; } = @"\bhttps?:\/\/(www\.)?[-a-zа-я0-9@:%._\+~#=]{2,256}\.[a-zа-я]{2,6}\b([-a-zа-я0-9@:%_\+.~#?&//=]*)\b";
-
-        private static string RemoveLinks(this string source)
-        {
-            return Regex.Replace(source, UrlRegex, EmptySymbol);
-        }
-        
-        private static string RemoveSingleDigits(this string source)
-        {
-            return Regex.Replace(source, @"\b\d+\b", EmptySymbol);
+            public Remove(string regex, RegexOptions regexOptions = RegexOptions.None, string replaceSymbol = EmptySymbol) =>
+                (Regex, ReplaceSymbol, RegexOptions) = (regex, replaceSymbol, regexOptions);
         }
     }
 }

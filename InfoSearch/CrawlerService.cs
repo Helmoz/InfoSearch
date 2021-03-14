@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using HtmlAgilityPack;
@@ -13,6 +15,10 @@ namespace InfoSearch
     public class CrawlerService : IHostedService
     {
         private List<string> Links { get; }
+
+        private const string FolderPath = @"C:\Crawler";
+
+        private ConcurrentBag<string> Index { get; } = new();
         
         public CrawlerService(IOptions<LinksSource> options)
         {
@@ -21,13 +27,15 @@ namespace InfoSearch
         
         public async Task StartAsync(CancellationToken cancellationToken)
         {
-            var i = 0;
-            foreach (var link in Links)
-            {
-                i++;
-                Console.WriteLine($"{i}/{Links.Count}");
-                await ProcessPage(link);
-            }
+            var indexFilePath = $"{FolderPath}\\index.txt";
+
+            var tasks = Links.Select(ProcessPage);
+
+            await Task.WhenAll(tasks);
+
+            await using var w = new StreamWriter(indexFilePath, true, System.Text.Encoding.Unicode);
+            await w.WriteLineAsync(string.Join(Environment.NewLine, Index));
+            
 
             await StopAsync(cancellationToken);
         }
@@ -35,20 +43,12 @@ namespace InfoSearch
         private async Task ProcessPage(string url)
         {
             var doc = await GetHtmlAsync(url);
-            const string folderPath = @"C:\Crawler\";
-            var indexFilePath = $"{folderPath}index.txt";
             var uniqueId = Guid.NewGuid();
-            var path = $"{folderPath}Pages\\{uniqueId}.txt";
+            var path = $"{FolderPath}\\Pages\\{uniqueId}.txt";
 
-            await using (var sw = new StreamWriter(path, false, System.Text.Encoding.Unicode))
-            {
-                await sw.WriteLineAsync(ExtractText(doc));
-            }
-
-            await using (var w = new StreamWriter(indexFilePath, true, System.Text.Encoding.Unicode))
-            {
-                await w.WriteLineAsync($"{uniqueId} {url}");
-            }
+            await using var sw = new StreamWriter(path, false, System.Text.Encoding.Unicode);
+            await sw.WriteLineAsync(doc.ParsedText);
+            Index.Add($"{uniqueId} {url}");
         }
 
         public async Task StopAsync(CancellationToken cancellationToken)
@@ -56,25 +56,11 @@ namespace InfoSearch
             await Task.CompletedTask;
         }
         
-        private async Task<HtmlDocument> GetHtmlAsync(string url)
+        private static async Task<HtmlDocument> GetHtmlAsync(string url)
         {
             var web = new HtmlWeb();
             var htmlDoc = await web.LoadFromWebAsync(url);
             return htmlDoc;
-        }
-
-        private static string Symbols { get; set; } = @"[↑!@#$%^&*()_+=\[{\]};:<>|./?,\\'""-a-zA-z0-9]";
-
-        private static string ExtractText(HtmlDocument document)
-        {
-            var chunks = document.DocumentNode.DescendantsAndSelf()
-                .Where(item => item.NodeType == HtmlNodeType.Text)
-                .Where(item => item.Name != "a")
-                .Where(item => item.InnerText.Trim() != "")
-                .Select(item => item.InnerText.Trim())
-                .ToList();
-
-            return string.Join(" ", chunks);
         }
     }
 }

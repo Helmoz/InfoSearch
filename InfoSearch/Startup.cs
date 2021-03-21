@@ -16,9 +16,10 @@ namespace InfoSearch
         {
             var section = Configuration.GetSection(nameof(LinksSource));
             services.Configure<LinksSource>(section);
-            //services.AddHostedService<CrawlerService>(); 
+            //services.AddHostedService<CrawlerService>();
             //services.AddHostedService<TokenizeService>();
-            services.AddHostedService<LemmatizeService>();
+            //services.AddHostedService<LemmatizeService>();
+            services.AddHostedService<InvertedIndexService>();
         }
     }
 }

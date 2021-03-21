@@ -16,14 +16,10 @@ namespace InfoSearch
         private MorphAnalyzer MorphAnalyzer { get; set; } = new(true);
 
         private ParallelOptions ParallelOptions { get; set; } = new() {MaxDegreeOfParallelism = 10};
-        
-        private const string TokensFilePath = @"C:\Crawler\Tokens.txt";
-        
-        private const string LemmasFilePath = @"C:\Crawler\Lemmas.txt";
-        
+
         public async Task StartAsync(CancellationToken cancellationToken)
         {
-            var words = File.ReadLines(TokensFilePath);
+            var words = File.ReadLines(FilePathConstants.TokensFilePath);
             var parsedWords = MorphAnalyzer.Parse(words).ToList();
 
             Parallel.ForEach(parsedWords, ParallelOptions, word =>
@@ -37,8 +33,8 @@ namespace InfoSearch
                        return bag;
                     });
             });
-            
-            await using var w = new StreamWriter(LemmasFilePath);
+
+            await using var w = new StreamWriter(FilePathConstants.LemmasFilePath);
             foreach (var (key, value) in Lemmas)
             {
                 await w.WriteLineAsync($"{key} {string.Join(" ", value)}");

@@ -3,7 +3,6 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using HtmlAgilityPack;
@@ -16,18 +15,16 @@ namespace InfoSearch
     {
         private List<string> Links { get; }
 
-        private const string FolderPath = @"C:\Crawler";
-
         private ConcurrentBag<string> Index { get; } = new();
-        
+
         public CrawlerService(IOptions<LinksSource> options)
         {
             Links = options.Value.Links;
         }
-        
+
         public async Task StartAsync(CancellationToken cancellationToken)
         {
-            var indexFilePath = $"{FolderPath}\\index.txt";
+            var indexFilePath = $"{FilePathConstants.FolderPath}\\index.txt";
 
             var tasks = Links.Select(ProcessPage);
 
@@ -35,7 +32,7 @@ namespace InfoSearch
 
             await using var w = new StreamWriter(indexFilePath, true, System.Text.Encoding.Unicode);
             await w.WriteLineAsync(string.Join(Environment.NewLine, Index));
-            
+
 
             await StopAsync(cancellationToken);
         }
@@ -44,7 +41,7 @@ namespace InfoSearch
         {
             var doc = await GetHtmlAsync(url);
             var uniqueId = Guid.NewGuid();
-            var path = $"{FolderPath}\\Pages\\{uniqueId}.txt";
+            var path = $"{FilePathConstants.FolderPath}\\Pages\\{uniqueId}.txt";
 
             await using var sw = new StreamWriter(path, false, System.Text.Encoding.Unicode);
             await sw.WriteLineAsync(doc.ParsedText);
@@ -55,7 +52,7 @@ namespace InfoSearch
         {
             await Task.CompletedTask;
         }
-        
+
         private static async Task<HtmlDocument> GetHtmlAsync(string url)
         {
             var web = new HtmlWeb();

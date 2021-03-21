@@ -7,7 +7,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using InfoSearch.Lib;
 using Microsoft.Extensions.Hosting;
-using StopWord;
 
 namespace InfoSearch
 {
@@ -17,9 +16,7 @@ namespace InfoSearch
             '\n', '\t', '\r', ':', ';', '(', ')', '.', ',', ' ', '[', ']', '-', '"', '{', '}', '!', '?',
             '@', '$', '=', '^', '/', '\\', '°', '#', '*', '|', '§', '·', '—', '»', '«'
         };
-        
-        private const string TokensFilePath = @"C:\Crawler\Tokens.txt";
-        
+
         private List<string> StopWords { get; }
 
         public TokenizeService()
@@ -27,9 +24,9 @@ namespace InfoSearch
             StopWords = StopWord.StopWords.GetStopWords("ru").ToList();
             StopWords.AddRange(new []{ "б", "д", "см", "фр", "ф", "л", "э", "п", "н", "гл", "ю", "др", "стб", "гц", "ин", "сф", "рга"});
         }
-        
+
         private ConcurrentBag<string> Tokens { get; } = new();
-        
+
         public async Task StartAsync(CancellationToken cancellationToken)
         {
             var txtImporter = new TextImporter();
@@ -39,12 +36,12 @@ namespace InfoSearch
 
             await Task.WhenAll(tasks);
 
-            await using var w = new StreamWriter(TokensFilePath, false, System.Text.Encoding.Unicode);
+            await using var w = new StreamWriter(FilePathConstants.TokensFilePath, false, System.Text.Encoding.Unicode);
             foreach (var token in Tokens.Distinct())
             {
                 await w.WriteLineAsync(token);
             }
-            
+
             await StopAsync(cancellationToken);
         }
 
@@ -56,12 +53,12 @@ namespace InfoSearch
                 .Where(word => !StopWords.Contains(word))
                 .Where(x => x.All(letter => letter >= 'а' && letter <= 'я'))
                 .ToList();
-                
+
             foreach (var token in tokens)
             {
                 Tokens.Add(token);
             }
-            
+
             return Task.CompletedTask;;
         }
 

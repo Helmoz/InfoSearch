@@ -19,7 +19,8 @@ namespace InfoSearch
             //services.AddHostedService<CrawlerService>();
             //services.AddHostedService<TokenizeService>();
             //services.AddHostedService<LemmatizeService>();
-            services.AddHostedService<InvertedIndexService>();
+            //services.AddHostedService<InvertedIndexService>();
+            services.AddHostedService<CountTfIdfService>();
         }
     }
 }

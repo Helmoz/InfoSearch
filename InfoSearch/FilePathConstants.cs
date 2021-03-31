@@ -11,5 +11,7 @@
         public const string TokensFilePath = @"C:\Crawler\Tokens.txt";
 
         public const string LemmasFilePath = @"C:\Crawler\Lemmas.txt";
+
+        public const string TfIdfFilePath = @"C:\Crawler\TfIdf.txt";
     }
 }

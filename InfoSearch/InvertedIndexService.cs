@@ -21,39 +21,29 @@ namespace InfoSearch
                 .Select(str => str.Split(' ').First())
                 .ToDictionary(
                     index => index,
-                    index => File.ReadLines($"{FilePathConstants.FolderPath}\\Pages\\{index}.txt"));
+                    index => File.ReadAllText($"{FilePathConstants.FolderPath}\\Pages\\{index}.txt"));
 
             var wordsDictionary = File.ReadLines(FilePathConstants.LemmasFilePath)
                 .Select(x => x.Split(' '))
                 .ToDictionary(x => x.First(), x => x.Distinct());
 
-            foreach (var document in documentDictionary)
+            var options = new ParallelOptions { MaxDegreeOfParallelism = 10 };
+            Parallel.ForEach(documentDictionary, options, document =>
             {
-                foreach (var pair in wordsDictionary)
+                Parallel.ForEach(wordsDictionary, options, pair =>
                 {
-                    var wordWasFound = false;
-                    foreach (var line in document.Value)
+                    if (pair.Value.Any(str => Regex.IsMatch(document.Value, str, RegexOptions.IgnoreCase)))
                     {
-                        foreach (var str in pair.Value)
-                        {
-                            if (Regex.IsMatch(line, str, RegexOptions.IgnoreCase))
+                        dictionary.AddOrUpdate(pair.Key,
+                            key => new ConcurrentBag<string> { document.Key },
+                            (key, bag) =>
                             {
-                                dictionary.AddOrUpdate(pair.Key,
-                                    key => new ConcurrentBag<string> {document.Key},
-                                    (key, bag) =>
-                                    {
-                                        bag.SafeAdd(document.Key);
-                                        return bag;
-                                    });
-                                wordWasFound = true;
-                                break;
-                            }
-                        }
-
-                        if (wordWasFound) break;
+                                bag.SafeAdd(document.Key);
+                                return bag;
+                            });
                     }
-                }
-            }
+                });
+            });
 
             var orderedDictionary = dictionary.Keys
                 .OrderBy(key => key)

@@ -10,7 +10,7 @@ using DeepMorphy;
 using InfoSearch.Extensions;
 using Microsoft.Extensions.Hosting;
 
-namespace InfoSearch
+namespace InfoSearch.DataServices
 {
     public class InvertedIndexService : IHostedService
     {

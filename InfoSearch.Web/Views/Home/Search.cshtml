@@ -1,0 +1,26 @@
+﻿@model Dictionary<string, double>
+@{
+    ViewData["Title"] = "Search";
+}
+<h1>@ViewData["Title"]</h1>
+
+<form asp-area="" asp-controller="Home" asp-action="Search">
+    <label>SearchString:</label>
+    <input type="text" name="searchString"/><br/>
+    <br/>
+    <button type="submit" class="btn btn-primary">Start search</button>
+</form>
+<br/>
+<p>Search results:</p>
+@if (Model != null)
+{
+    foreach (var (key, value) in Model)
+    {
+        <a href="@key">@key : @value</a>
+        <br/>
+    }
+}
+else
+{
+    <p>No results!</p>
+}

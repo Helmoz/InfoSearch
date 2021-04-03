@@ -9,7 +9,7 @@ using HtmlAgilityPack;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
-namespace InfoSearch
+namespace InfoSearch.DataServices
 {
     public class CrawlerService : IHostedService
     {

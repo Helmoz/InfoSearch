@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using InfoSearch.Lib;
 using Microsoft.Extensions.Hosting;
 
-namespace InfoSearch
+namespace InfoSearch.DataServices
 {
     public class TokenizeService : IHostedService
     {

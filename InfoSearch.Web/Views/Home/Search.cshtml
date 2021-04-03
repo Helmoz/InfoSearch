@@ -12,7 +12,7 @@
 </form>
 <br/>
 <p>Search results:</p>
-@if (Model != null)
+@if (Model != null && Model.Count > 0)
 {
     foreach (var (key, value) in Model)
     {
